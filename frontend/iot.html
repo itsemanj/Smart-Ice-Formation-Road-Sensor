@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Smart Ice Formation Road Sensor</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{
+      --bg1:#07131e;
+      --bg2:#0b2233;
+      --card: rgba(255,255,255,.06);
+      --border: rgba(255,255,255,.12);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --good: #39d98a;
+      --warn: #ffcc66;
+      --bad:  #ff5d6c;
+      --radius: 18px;
+      --shadow: 0 18px 50px rgba(0,0,0,.35);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 600px at 10% 0%, rgba(120,200,255,.18), transparent 55%),
+        radial-gradient(800px 500px at 90% 10%, rgba(160,120,255,.10), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      min-height:100vh;
+      padding:20px;
+    }
+
+    .container{ max-width: 980px; margin: 0 auto; }
+
+    header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .title{ display:flex; flex-direction:column; gap:6px; }
+    .title h1{ margin:0; font-size:22px; letter-spacing:.2px; }
+    .title p{ margin:0; color: var(--muted); font-size:14px; }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+      font-size:13px;
+      color: var(--muted);
+      white-space:nowrap;
+    }
+
+    .dot{
+      width:10px;height:10px;border-radius:50%;
+      background: var(--good);
+      box-shadow: 0 0 0 4px rgba(57,217,138,.12);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:14px;
+    }
+    @media (max-width: 860px){ .grid{ grid-template-columns: 1fr; } }
+
+    .card{
+      background: var(--card);
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:16px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .big{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+    }
+
+    .reading{ display:flex; flex-direction:column; gap:6px; }
+
+    .label{
+      color: var(--muted);
+      font-size:13px;
+      letter-spacing:.2px;
+    }
+
+    .value{
+      font-size:44px;
+      font-weight:700;
+      letter-spacing:-1px;
+      line-height:1;
+    }
+
+    .sub{ color: var(--muted); font-size:14px; }
+
+    .badge{
+      padding:10px 12px;
+      border-radius: 12px;
+      border:1px solid var(--border);
+      font-weight:700;
+      letter-spacing:.2px;
+      text-align:center;
+      min-width: 170px;
+    }
+    .badge.good{ background: rgba(57,217,138,.12); color: var(--good); }
+    .badge.warn{ background: rgba(255,204,102,.14); color: var(--warn); }
+    .badge.bad { background: rgba(255,93,108,.14); color: var(--bad); }
+
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:12px;
+      margin-top:12px;
+    }
+    @media (max-width: 520px){
+      .kpis{ grid-template-columns: 1fr; }
+      .badge{ min-width: unset; width:100%; }
+    }
+    .kpi .value{ font-size:28px; }
+
+    .divider{
+      height:1px;
+      background: rgba(255,255,255,.10);
+      margin:14px 0;
+    }
+
+    .alerts{ display:flex; flex-direction:column; gap:10px; }
+
+    .alert{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:12px;
+      border-radius: 14px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.14);
+    }
+
+    .alert .icon{
+      width:34px;height:34px;
+      display:flex; align-items:center; justify-content:center;
+      border-radius: 12px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      font-size:18px;
+    }
+
+    .alert .text{ display:flex; flex-direction:column; gap:3px; }
+    .alert .text strong{ font-size:14px; }
+    .alert .text span{
+      font-size:13px;
+      color: var(--muted);
+      line-height:1.35;
+    }
+
+    .ai-box textarea{
+      width:100%;
+      min-height:96px;
+      resize:vertical;
+      border-radius: 14px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      padding:12px;
+      outline:none;
+      font-size:14px;
+    }
+
+    .btns{
+      display:flex;
+      gap:10px;
+      margin-top:10px;
+      flex-wrap:wrap;
+    }
+    button{
+      border:none;
+      border-radius: 14px;
+      padding:10px 12px;
+      background: rgba(255,255,255,.10);
+      color: var(--text);
+      border:1px solid var(--border);
+      cursor:pointer;
+      font-weight:700;
+    }
+    button:hover{ background: rgba(255,255,255,.14); }
+
+    footer{ margin-top:14px; color: var(--muted); font-size:12px; }
+    code{ color: rgba(255,255,255,.85); }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <div class="title">
+        <h1>❄ Smart Ice Formation Road Sensor</h1>
+        <p>Detects black ice early • Real-time alerts for cities & drivers</p>
+      </div>
+      <div class="pill" title="Connection status (later: MQTT/DB)">
+        <span class="dot" id="connDot"></span>
+        <span id="connText">Connected (demo)</span>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT: MAIN STATUS -->
+      <section class="card">
+        <div class="big">
+          <div class="reading">
+            <div class="label">Roadside Temperature (DHT22)</div>
+            <div class="value"><span id="temp">--</span>°C</div>
+            <div class="sub">Last update: <span id="updated">--:--</span></div>
+          </div>
+
+          <div id="riskBadge" class="badge warn">RISK: MEDIUM</div>
+        </div>
+
+        <div class="kpis">
+          <div class="card kpi">
+            <div class="label">Humidity</div>
+            <div class="value"><span id="hum">--</span>%</div>
+            <div class="sub">From DHT22</div>
+          </div>
+
+          <div class="card kpi">
+            <div class="label">Surface Condition</div>
+            <div class="value" style="font-size:22px;font-weight:800;">
+              <span id="surface">--</span>
+            </div>
+            <div class="sub">Rule/AI interpretation</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="label">AI Explanation (Gemini later)</div>
+        <p class="sub" id="aiText" style="margin:8px 0 0;">
+          Waiting for backend...
+        </p>
+
+        <div class="divider"></div>
+<div class="label">5-Hour AI Forecast</div>
+<canvas id="forecastChart" style="max-width: 100%; height: 300px;"></canvas>
+
+      </section>
+
+      <!-- RIGHT: ALERTS + CONTROL -->
+      <aside class="card">
+        <div class="label">Alerts</div>
+        <div class="alerts" style="margin-top:10px;">
+          <div class="alert">
+            <div class="icon">⚠️</div>
+            <div class="text">
+              <strong>City alert</strong>
+              <span id="cityAlert">No active city alert.</span>
+            </div>
+          </div>
+          <div class="alert">
+            <div class="icon">🚗</div>
+            <div class="text">
+              <strong>Driver warning</strong>
+              <span id="driverAlert">No active driver warning.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="label">Test buttons (local)</div>
+        <div class="btns">
+          <button type="button" onclick="demoHighRisk()">Demo: High risk</button>
+          <button type="button" onclick="demoLowRisk()">Demo: Low risk</button>
+        </div>
+      </aside>
+    </div>
+
+    <footer>
+      Frontend fetches: <code>/api/latest</code> and <code>/api/forecast</code>
+    </footer>
+  </div>
+
+  <script>
+    function setBadge(risk){
+      const badge = document.getElementById("riskBadge");
+      badge.classList.remove("good","warn","bad");
+
+      if (risk === "HIGH") badge.classList.add("bad");
+      else if (risk === "MEDIUM") badge.classList.add("warn");
+      else badge.classList.add("good");
+
+      badge.textContent = `RISK: ${risk}`;
+    }
+
+    function setSurface(risk){
+      const surface = document.getElementById("surface");
+      if (risk === "HIGH") surface.textContent = "Very likely ice";
+      else if (risk === "MEDIUM") surface.textContent = "Cold & possibly wet";
+      else surface.textContent = "Normal";
+    }
+
+    async function refresh() {
+  try {
+    // ---- LATEST SENSOR DATA ----
+    const latestRes = await fetch("/api/latest");
+    if (!latestRes.ok) throw new Error("latest failed");
+
+    const latest = await latestRes.json();
+
+    document.getElementById("temp").textContent = Number(latest.temperature).toFixed(1);
+    document.getElementById("hum").textContent  = Math.round(Number(latest.humidity));
+    document.getElementById("updated").textContent =
+      new Date(latest.updated).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    // ---- GEMINI FORECAST ----
+const forecastRes = await fetch("/api/forecast");
+if (!forecastRes.ok) throw new Error("forecast failed");
+
+const forecast = await forecastRes.json();
+
+// ✅ SHOW FULL GEMINI OUTPUT
+document.getElementById("aiText").textContent =
+      forecast.summary || JSON.stringify(forecast, null, 2);
+
+// ---- USE FIRST HOUR FOR UI ----
+if (forecast.forecast && forecast.forecast.length > 0) {
+    const risk = forecast.forecast[0].risk;
+    setBadge(risk);
+    setSurface(risk);
+
+    document.getElementById("cityAlert").textContent =
+        risk === "HIGH"
+            ? "High ice risk predicted. Prepare road treatment."
+            : "No active city alert.";
+
+    document.getElementById("driverAlert").textContent =
+        risk !== "LOW"
+            ? "Slippery road conditions expected. Reduce speed."
+            : "No active driver warning.";
+
+    // ✅ UPDATE THE CHART
+    updateForecastChart(forecast.forecast);
+}
+
+
+    document.getElementById("connText").textContent = "Connected";
+  } catch (err) {
+    console.error(err);
+    document.getElementById("connText").textContent = "Disconnected";
+    document.getElementById("aiText").textContent =
+      "AI data temporarily unavailable. Check backend logs.";
+  }
+}
+
+// Create Chart.js instance (global so we can update later)
+let forecastChart;
+
+function updateForecastChart(forecastData) {
+  const hours = forecastData.map(f => f.hour);
+  const temperatures = forecastData.map(f => f.temperature);
+  const humidities = forecastData.map(f => f.humidity);
+
+  // Destroy previous chart if exists
+  if (forecastChart) forecastChart.destroy();
+
+  const ctx = document.getElementById("forecastChart").getContext("2d");
+
+  forecastChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: hours,
+      datasets: [
+        {
+          label: "Temperature (°C)",
+          data: temperatures,
+          borderColor: "#39d98a",
+          backgroundColor: "rgba(57,217,138,0.2)",
+          yAxisID: "y1",
+          tension: 0.3,
+          fill: true
+        },
+        {
+          label: "Humidity (%)",
+          data: humidities,
+          borderColor: "#3399ff",
+          backgroundColor: "rgba(51,153,255,0.2)",
+          yAxisID: "y2",
+          tension: 0.3,
+          fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: {
+        mode: "index",
+        intersect: false,
+      },
+      stacked: false,
+      plugins: {
+        legend: {
+          position: "top"
+        },
+        title: {
+          display: true,
+          text: "Next 5 Hours Forecast"
+        }
+      },
+      scales: {
+        y1: {
+          type: "linear",
+          position: "left",
+          title: {
+            display: true,
+            text: "Temperature (°C)"
+          }
+        },
+        y2: {
+          type: "linear",
+          position: "right",
+          title: {
+            display: true,
+            text: "Humidity (%)"
+          },
+          grid: {
+            drawOnChartArea: false
+          }
+        }
+      }
+    }
+  });
+}
+
+
+
+    // local demo (no backend)
+    function demoHighRisk(){
+      document.getElementById("temp").textContent = "-3.4";
+      document.getElementById("hum").textContent = "88";
+      document.getElementById("updated").textContent =
+        new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+      setBadge("HIGH");
+      setSurface("HIGH");
+      document.getElementById("aiText").textContent =
+        "Below freezing + high moisture → high black ice risk. Trigger warnings and salt priority roads.";
+    }
+
+    function demoLowRisk(){
+      document.getElementById("temp").textContent = "3.2";
+      document.getElementById("hum").textContent = "55";
+      document.getElementById("updated").textContent =
+        new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+      setBadge("LOW");
+      setSurface("LOW");
+      document.getElementById("aiText").textContent =
+        "Above freezing and drier conditions → low ice risk.";
+    }
+
+    refresh();
+    setInterval(refresh, 30000);
+
+    
+  </script>
+</body>
+</html>
